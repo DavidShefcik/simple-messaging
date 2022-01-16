@@ -1,0 +1,37 @@
+version: "3.8"
+services:
+  dynamodb-local:
+    container_name: simple-messaging-dynamodb
+    image: "amazon/dynamodb-local:latest"
+    command: "-jar DynamoDBLocal.jar -sharedDb -dbPath ./data"
+    ports:
+      - "8000:8000"
+    volumes:
+      - "./docker/dynamodb:/home/dynamodblocal/data"
+    working_dir: /home/dynamodblocal
+  api:
+    container_name: simple-messaging-api
+    image: node:14
+    depends_on:
+      - dynamodb-local
+    ports:
+      - "8080:8080"
+    env_file:
+      - ./api/.env
+    working_dir: /srv/api
+    volumes:
+      - .:/srv/api
+    command: yarn workspace api dev
+  frontend:
+    container_name: simple-messaging-frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    volumes:
+      - ./frontend:/srv/frontend
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./frontend/.env
+    depends_on:
+      - api
